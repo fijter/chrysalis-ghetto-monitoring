@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 
 load_dotenv()    
 
+confirmed_ms = {}
+
 def test_msg(broker, port, timeout):
     try:
         msg = subscribe.simple('messages', hostname=broker, port=port, keepalive=timeout)
@@ -69,6 +71,8 @@ def check_sync(api_base, milestone_max_diff=10, timeout=10):
     lmi = data.get('latestMilestoneIndex')
     smi = data.get('solidMilestoneIndex')
 
+    confirmed_ms[api_base] = smi
+
     if not lmi or not smi:
         return (False, 'Milestone indexes not returned in result body: %s' % data)
 
@@ -98,9 +102,19 @@ def test_endpoint(uri, test_mqtt=True, test_api=True):
 
 if __name__ == '__main__':
     
+    confirmed_ms = {}
+
     test_endpoint('https://api.lb-0.testnet.chrysalis2.com', test_mqtt=False)
     test_endpoint('https://api.coo.testnet.chrysalis2.com', test_mqtt=False)
 
     for i in range(4):
         uri = 'https://api.hornet-%d.testnet.chrysalis2.com' % i
         test_endpoint(uri)
+    
+    for host, ms in confirmed_ms.items():
+        for ohost, ams in confirmed_ms.items():
+            if (ms + 10) < ams:
+                msg = '%s %s confirmed milestones behind on %s (%s/%s)' % (host, ams-ms, ohost, ms, ams)
+                print(msg)
+                log_to_slack('Node issue: %s' % (msg,))
+
