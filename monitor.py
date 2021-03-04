@@ -70,7 +70,7 @@ def check_sync(api_base, milestone_max_diff=10, timeout=10):
         return (False, 'Result JSON does not contain "data" key: %s' % data)
 
     lmi = data.get('latestMilestoneIndex')
-    smi = data.get('solidMilestoneIndex')
+    smi = data.get('confirmedMilestoneIndex')
 
     confirmed_ms[api_base] = smi
 
